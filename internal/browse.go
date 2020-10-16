@@ -16,7 +16,7 @@ func Browse(ctx context.Context, src string, bufSize int) chan Entry {
 			case <-ctx.Done():
 				e = filepath.SkipDir
 			default:
-				if ! info.IsDir() {
+				if !info.IsDir() {
 					c <- Entry{Path: path, Err: err}
 				}
 			}

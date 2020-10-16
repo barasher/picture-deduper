@@ -18,7 +18,7 @@ var (
 		Short: "Picture deduper",
 	}
 
-	input    string
+	input       string
 	threadCount int
 )
 

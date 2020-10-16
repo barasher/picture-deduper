@@ -12,6 +12,7 @@ import (
 )
 
 var allowedExtensionRegexp = regexp.MustCompile("(?i).*\\.jp(e)*g")
+
 const fileLoggingKey = "file"
 
 func Hash(ctx context.Context, inChan chan Entry, goRoutineCount int) chan Entry {
@@ -35,7 +36,7 @@ func Hash(ctx context.Context, inChan chan Entry, goRoutineCount int) chan Entry
 							return
 						}
 						if !isJpeg(cur.Path) {
-							l2.Debug().Str(fileLoggingKey, cur.Path).Msg("Unsupported file type")
+							l2.Warn().Str(fileLoggingKey, cur.Path).Msg("Unsupported file type")
 							continue
 						}
 						if cur.Hash, err = hashFile(cur.Path); err != nil {
