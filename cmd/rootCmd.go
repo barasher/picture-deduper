@@ -14,11 +14,12 @@ const (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "dedup",
+		Use:   "picture-dedup",
 		Short: "Picture deduper",
 	}
 
 	input    string
+	threadCount int
 )
 
 func Execute() {
