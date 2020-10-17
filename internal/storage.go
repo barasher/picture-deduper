@@ -9,13 +9,17 @@ import (
 )
 
 type Storage struct {
-	hashs map[string]uint64
+	hashs []Entry
 }
 
 func newStorage() *Storage {
 	s := Storage{}
-	s.hashs = make(map[string]uint64)
+	s.hashs = []Entry{}
 	return &s
+}
+
+func (s *Storage) Add(e ...Entry) {
+	s.hashs = append(s.hashs, e...)
 }
 
 func Load(file string) (*Storage, error) {
@@ -37,7 +41,7 @@ func Load(file string) (*Storage, error) {
 			log.Warn().Msgf("Error while parsing hash '%v' concerning file %v: %v", cur[1], cur[0], err)
 			continue
 		}
-		s.hashs[cur[0]] = h
+		s.hashs = append(s.hashs, Entry{Path: cur[0], Hash: h})
 	}
 	return s, nil
 }
@@ -50,8 +54,8 @@ func (s *Storage) Save(file string) error {
 	defer f.Close()
 
 	w := csv.NewWriter(f)
-	for p, h := range s.hashs {
-		if err = w.Write([]string{p, strconv.FormatUint(h, 10)}) ; err != nil {
+	for _, cur := range s.hashs {
+		if err = w.Write([]string{cur.Path, strconv.FormatUint(cur.Hash, 10)}); err != nil {
 			return err
 		}
 	}
