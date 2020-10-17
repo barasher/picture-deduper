@@ -1,16 +1,21 @@
 package internal
 
 import (
+	"context"
 	"encoding/csv"
 	"github.com/rs/zerolog/log"
 	"io"
+	"math/bits"
 	"os"
 	"strconv"
+	"sync"
 )
 
 type Storage struct {
 	hashs []Entry
 }
+
+// TODO add lock
 
 func newStorage() *Storage {
 	s := Storage{}
@@ -62,4 +67,61 @@ func (s *Storage) Save(file string) error {
 	w.Flush()
 
 	return w.Error()
+}
+
+type Similarity struct {
+	First    Entry
+	Second   Entry
+	Distance int
+}
+
+func (s *Storage) FindSimilarities(ctx context.Context, distance int, orLess bool, threadCount int) chan Similarity {
+	keyChan := make(chan int, threadCount)
+	go func() {
+		for i := 0; i < len(s.hashs); i++ {
+			keyChan <- i
+		}
+		close(keyChan)
+	}()
+
+	simChan := make(chan Similarity, threadCount)
+	go func() {
+		wg := sync.WaitGroup{}
+		wg.Add(threadCount)
+		for i := 0; i < threadCount; i++ {
+			go func() {
+				defer wg.Done()
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case cur, ok := <-keyChan:
+						if !ok {
+							return
+						}
+
+						if distance == 0 {
+							for idx := cur + 1; idx < len(s.hashs); idx++ {
+								if s.hashs[cur].Hash == s.hashs[idx].Hash {
+									simChan <- Similarity{s.hashs[cur], s.hashs[idx], 0}
+								}
+							}
+						} else {
+							for idx := cur + 1; idx < len(s.hashs); idx++ {
+								d := bits.OnesCount64(s.hashs[cur].Hash ^ s.hashs[idx].Hash)
+								if d == distance || (orLess && d < distance) {
+									simChan <- Similarity{s.hashs[cur], s.hashs[idx], d}
+								}
+							}
+						}
+
+					}
+				}
+			}()
+		}
+		wg.Wait()
+		close(simChan)
+	}()
+
+	return simChan
 }
