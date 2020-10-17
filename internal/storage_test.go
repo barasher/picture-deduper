@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-func TestLoad_Nominal(t *testing.T) {
-	s, err := Load("../testdata/storage.csv")
+func TestLoadFile_Nominal(t *testing.T) {
+	s, err := LoadFile("../testdata/storage.csv")
 	assert.Nil(t, err)
 	exp := []Entry{
 		{Path: "f1", Hash: 1},
@@ -19,20 +19,33 @@ func TestLoad_Nominal(t *testing.T) {
 	assert.ElementsMatch(t, exp, s.hashs)
 }
 
-func TestLoad_ParseError(t *testing.T) {
-	s, err := Load("../testdata/storageWithParseError.csv")
+func TestLoadFile_ParseError(t *testing.T) {
+	s, err := LoadFile("../testdata/storageWithParseError.csv")
 	assert.Nil(t, err)
 	exp := []Entry{
 		{Path: "f1", Hash: 1},
 		{Path: "f3", Hash: 3},
 	}
-	assert.Equal(t, exp, s.hashs)
+	assert.ElementsMatch(t, exp, s.hashs)
 
 }
 
-func TestLoad_NonExistingFile(t *testing.T) {
-	_, err := Load("nonExistingFile.txt")
+func TestLoadFile_NonExistingFile(t *testing.T) {
+	_, err := LoadFile("nonExistingFile.txt")
 	assert.NotNil(t, err)
+}
+
+func TestLoadChan(t *testing.T) {
+	c := make(chan Entry, 10)
+	c <- Entry{Path: "f1", Hash: 1}
+	c <- Entry{Path: "f2", Hash: 2}
+	close(c)
+	s := LoadChan(c)
+	exp := []Entry{
+		{Path: "f1", Hash: 1},
+		{Path: "f2", Hash: 2},
+	}
+	assert.ElementsMatch(t, exp, s.hashs)
 }
 
 func TestSave_Nominal(t *testing.T) {
@@ -47,7 +60,7 @@ func TestSave_Nominal(t *testing.T) {
 	err = s.Save(f.Name())
 	assert.Nil(t, err)
 
-	s2, err := Load(f.Name())
+	s2, err := LoadFile(f.Name())
 	assert.Nil(t, err)
 
 	assert.ElementsMatch(t, s.hashs, s2.hashs)

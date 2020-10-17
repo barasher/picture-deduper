@@ -27,7 +27,15 @@ func (s *Storage) Add(e ...Entry) {
 	s.hashs = append(s.hashs, e...)
 }
 
-func Load(file string) (*Storage, error) {
+func LoadChan(c chan Entry) *Storage {
+	s := newStorage()
+	for cur := range c {
+		s.Add(cur)
+	}
+	return s
+}
+
+func LoadFile(file string) (*Storage, error) {
 	s := newStorage()
 	f, err := os.Open(file)
 	if err != nil {

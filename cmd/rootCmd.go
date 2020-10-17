@@ -19,6 +19,7 @@ var (
 	}
 
 	input       string
+	output       string
 	threadCount int
 )
 
