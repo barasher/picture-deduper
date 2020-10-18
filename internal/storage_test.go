@@ -57,7 +57,7 @@ func TestSave_Nominal(t *testing.T) {
 	t.Logf("tempFile: %v", f.Name())
 	defer os.Remove(f.Name())
 
-	err = s.Save(f.Name())
+	err = s.Save(context.TODO(), f.Name())
 	assert.Nil(t, err)
 
 	s2, err := LoadFile(f.Name())

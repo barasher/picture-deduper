@@ -27,6 +27,5 @@ func build(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 	srcChan := internal.Browse(ctx, input, threadCount)
 	hashedChan := internal.Hash(ctx, srcChan, threadCount)
-	s := internal.LoadChan(hashedChan)
-	return s.Save(output)
+	return internal.AppendToFile(ctx, output, hashedChan)
 }

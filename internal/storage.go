@@ -59,7 +59,20 @@ func LoadFile(file string) (*Storage, error) {
 	return s, nil
 }
 
-func (s *Storage) Save(file string) error {
+func (s *Storage) Save(ctx context.Context, file string) error {
+	entryChan := make(chan Entry, 1)
+
+	go func() {
+		defer close(entryChan)
+		for _, v := range s.hashs {
+			entryChan <- v
+		}
+	}()
+
+	return AppendToFile(ctx, file, entryChan)
+}
+
+func AppendToFile(ctx context.Context, file string, entryChan chan Entry) error {
 	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return err
@@ -67,13 +80,22 @@ func (s *Storage) Save(file string) error {
 	defer f.Close()
 
 	w := csv.NewWriter(f)
-	for _, cur := range s.hashs {
-		if err = w.Write([]string{cur.Path, strconv.FormatUint(cur.Hash, 10)}); err != nil {
-			return err
+	func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case cur, ok := <-entryChan:
+				if ! ok {
+					return
+				}
+				if err = w.Write([]string{cur.Path, strconv.FormatUint(cur.Hash, 10)}); err != nil {
+					log.Error().Msgf("Error while marshalling hash for %v: %v", cur.Path, err)
+				}
+			}
 		}
-	}
+	}()
 	w.Flush()
-
 	return w.Error()
 }
 
