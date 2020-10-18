@@ -21,6 +21,8 @@ var (
 	input       string
 	output       string
 	threadCount int
+	distance int
+	orLess bool
 )
 
 func Execute() {
