@@ -23,6 +23,7 @@ var (
 	threadCount int
 	distance int
 	orLess bool
+	withDetails bool
 )
 
 func Execute() {
